@@ -1,0 +1,5 @@
+**/__pycache__/**
+data/**
+outputs/**
+pipeline/**
+conf/logging/comet.yaml

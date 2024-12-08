@@ -1,0 +1,21 @@
+random_seed: 2021
+data: eeg
+train_root_paths: ???
+train_data_paths: ???
+test_root_paths: ???
+test_data_paths: ???
+features: "M" # options: [clean or other] if "clean" will clean the data using the specified bad_channels.csv in corresponding data_path.
+target: "half" # target feature in S or MS task (overriden as step_size in EEG dataset)
+freq: "h" # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+seq_len: 512
+label_len: 0
+pred_len: 0
+enc_in: 128
+embed: "timeF" # time features encoding, options:[timeF, fixed, learned]
+num_workers: 10 
+batch_size: 128
+use_gpu: True 
+gpu: 0
+save_path: ???
+trained_vqvae_model_path: ???
+compression_factor: 4

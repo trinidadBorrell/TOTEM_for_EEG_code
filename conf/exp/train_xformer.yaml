@@ -1,0 +1,27 @@
+cuda_id: 0
+classifier_config: 
+  seed: 47
+  model_type: "xformer"
+  data_type: "eeg"
+  data_path: ???
+  codebook_size: 256
+  compression: 4
+  Tin: 512
+  checkpoint: true 
+  checkpoint_path: ??? 
+  exp_name: ??? 
+  optimizer: "adam" 
+  scheduler: "step"
+  baselr: 0.0001
+  epochs: 50
+  steps: 51
+  batchsize: 32
+  patience: 7
+  d_model: 64
+  d_hid: 128
+  nhead: 4
+  nlayers: 6
+  nsensors: 128 
+  nclasses: 4
+  onehot: false
+  scale: false

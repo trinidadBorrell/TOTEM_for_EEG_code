@@ -1,0 +1,19 @@
+random_seed: 2021
+data: "eeg" ## e.g. "eeg"
+root_paths: ??? ## e.g. ["./data/ETT/"]
+data_paths: ??? ## e.g. ["ETTh1.csv"]
+seq_len: 96 ## input sequence length
+label_len: 0 ## start token length
+pred_len: 96 ## prediction sequence length
+enc_in: 128 ## Not really needed bc revin affine=False
+use_gpu: True
+gpu: 0
+use_multi_gpu: False
+devices: '0,1,2,3'
+save_path: ???
+num_workers: 10 # data loader num workers
+batch_size: 128 # batch size of train input data
+features: "M" # forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
+target: "half" # target feature in S or MS task (overriden as step_size in EEG dataset)
+freq: "h" # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
+embed: "timeF" # time features encoding, options:[timeF, fixed, learned]; timeF:Time Features, fixed:learn a fixed representation, learned:let model learn the representation
