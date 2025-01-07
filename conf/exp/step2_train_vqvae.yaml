@@ -1,5 +1,5 @@
 save_dir: ???
-gpu_id: 1
+gpu_id: 0
 data_init_cpu_or_gpu: "cpu"
 vqvae_config: 
   general_seed: 47

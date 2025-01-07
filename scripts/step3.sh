@@ -1,7 +1,8 @@
 repo_dir="/path/to/TOTEM_for_EEG_code"
 
 dataset_name="example"
-python -m pdb -m steps.STEP3_save_classification_data \
+
+python -m steps.STEP3_save_classification_data \
     +preprocessing=step3_eeg \
     "++preprocessing.train_root_paths=['${repo_dir}/data']" \
     "++preprocessing.train_data_paths=['${dataset_name}.csv']" \
