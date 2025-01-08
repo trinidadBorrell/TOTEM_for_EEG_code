@@ -74,17 +74,20 @@ The pipeline has been tested with sampling rates 256-4096Hz, and is agnostic to 
 </details>
 
 ## Citation
+[TOTEM: TOkenized Time Series EMbeddings for General Time Series Analysis](https://arxiv.org/pdf/2402.16412)
 ```
-@misc{talukder2024totem,
-      title={TOTEM: TOkenized Time Series EMbeddings for General Time Series Analysis}, 
-      author={Sabera Talukder and Yisong Yue and Georgia Gkioxari},
-      year={2024},
-      eprint={2402.16412},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@article{talukder_totem_2024,
+	title = {TOTEM: TOkenized Time Series EMbeddings for General Time Series Analysis},
+	issn = {2835-8856},
+	shorttitle = {TOTEM},
+	url = {https://openreview.net/forum?id=QlTLkH6xRC},
+	journal = {Transactions on Machine Learning Research},
+	author = {Talukder, Sabera J. and Yue, Yisong and Gkioxari, Georgia},
+	year = {2024}
 }
 ```
 
+[Generalizability Under Sensor Failure: Tokenization + Transformers Enable More Robust Latent Spaces](https://arxiv.org/abs/2402.18546)
 ```
 @article{chau2024generalizability,
   title={Generalizability Under Sensor Failure: Tokenization+ Transformers Enable More Robust Latent Spaces},
