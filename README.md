@@ -76,14 +76,14 @@ The pipeline has been tested with sampling rates 256-4096Hz, and is agnostic to 
 ## Citation
 [TOTEM: TOkenized Time Series EMbeddings for General Time Series Analysis](https://arxiv.org/pdf/2402.16412)
 ```
-@article{talukder_totem_2024,
-	title = {TOTEM: TOkenized Time Series EMbeddings for General Time Series Analysis},
-	issn = {2835-8856},
-	shorttitle = {TOTEM},
-	url = {https://openreview.net/forum?id=QlTLkH6xRC},
-	journal = {Transactions on Machine Learning Research},
-	author = {Talukder, Sabera J. and Yue, Yisong and Gkioxari, Georgia},
-	year = {2024}
+@article{talukder2024totem,
+  title={{TOTEM}: {TO}kenized Time Series {EM}beddings for General Time Series Analysis},
+  author={Sabera J Talukder and Yisong Yue and Georgia Gkioxari},
+  journal={Transactions on Machine Learning Research},
+  issn={2835-8856},
+  year={2024},
+  url={https://openreview.net/forum?id=QlTLkH6xRC},
+  note={}
 }
 ```
 
