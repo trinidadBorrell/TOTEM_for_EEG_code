@@ -650,8 +650,6 @@ class Dataset_EEG(Dataset):
             # Update self.eeg_columns with the filtered columns
             self.eeg_columns = filtered_columns
 
-
-
         
         if self.scale:
             self.scaler.fit(self.make_contiguous_x_data(df_raw, df_split, split='train')) 
@@ -679,10 +677,16 @@ class Dataset_EEG(Dataset):
             self.data_x_label = test_x_label
             self.data_y_label = test_y_label
 
+    """
+    Instead of considering each trial ends with a Rest event, we consider the last trial to end with the last event
+    (which is not Rest). 
+    Redo functions make_contiguous_x_data and make_full_x_y_data to consider this.
+    
+    
+
     def make_contiguous_x_data(self, df_raw, df_split, split):         
         data_x = []
         for trial_start_ind, r in df_split[df_split['split'] == split].iterrows():
-            print(df_raw.loc[trial_start_ind:][df_raw.loc[trial_start_ind:, 'STI'] == self.event_dict['Rest']].iloc[0].name)
             trial_end_ind = df_raw.loc[trial_start_ind:][df_raw.loc[trial_start_ind:, 'STI'] == self.event_dict['Rest']].iloc[0].name
             data_x.append(df_raw.loc[trial_start_ind:trial_end_ind, self.eeg_columns].values)
         return np.concatenate(data_x)
@@ -708,6 +712,64 @@ class Dataset_EEG(Dataset):
                     data_y_label.append(int(r['STI']) - 1) ## These labels are 1 indexed in the original files
                 else:
                     break
+        return data_x, data_y, data_x_label, data_y_label
+    """
+    def make_contiguous_x_data(self, df_raw, df_split, split):
+        data_x = []
+        # Get all trial start indices for this split
+        trial_starts = df_split[df_split['split'] == split].index.tolist()
+    
+        # Sort them to ensure they're in ascending order
+        trial_starts.sort()
+    
+        for i, trial_start_ind in enumerate(trial_starts):
+            # If this is not the last trial, use the next trial start as the end
+            if i < len(trial_starts) - 1:
+                trial_end_ind = trial_starts[i+1] - 1  # End just before next trial
+            else:
+                # For the last trial, go to the end of the dataset
+                trial_end_ind = df_raw.index[-1]
+            
+            data_x.append(df_raw.loc[trial_start_ind:trial_end_ind, self.eeg_columns].values)
+        
+        if not data_x:  # If no data was collected, return empty array with correct columns
+            return np.zeros((0, len(self.eeg_columns)))
+        return np.concatenate(data_x)
+
+    def make_full_x_y_data(self, df_raw, df_split, split):
+        data_x = []
+        data_y = []
+        data_x_label = []
+        data_y_label = []
+    
+        # Get all trial start indices for this split
+        trial_starts = df_split[df_split['split'] == split].index.tolist()
+        trial_starts.sort()
+    
+        for i, trial_start_ind in enumerate(trial_starts):
+            r = df_split.loc[trial_start_ind]
+        
+            # If this is not the last trial, use the next trial start as the end
+            if i < len(trial_starts) - 1:
+                trial_end_ind = trial_starts[i+1] - 1
+            else:
+                # For the last trial, go to the end of the dataset
+                trial_end_ind = df_raw.index[-1]
+            
+            for time in range(trial_start_ind, trial_end_ind, self.step_size):
+                s_begin = time
+                s_end = s_begin + self.seq_len
+                r_begin = s_end - self.label_len
+                r_end = r_begin + self.label_len + self.pred_len
+            
+                if r_end <= trial_end_ind:
+                    data_x.append(df_raw.loc[s_begin:s_end-1, self.eeg_columns].values)
+                    data_y.append(df_raw.loc[r_begin:r_end-1, self.eeg_columns].values)
+                    data_x_label.append(int(r['STI']))  # Keep original STI value (no -1)
+                    data_y_label.append(int(r['STI']))  # Keep original STI value
+                else:
+                    break
+                
         return data_x, data_y, data_x_label, data_y_label
     
     def __getitem__(self, index):
