@@ -4,204 +4,164 @@ import datetime
 import re
 import sys
 
-def get_commit_details(commit_hash):
-    """Get detailed information about a specific commit"""
-    # Get the commit message and metadata
-    result = subprocess.run(
-        ["git", "show", "-s", "--format=%h|%an|%ad|%s", commit_hash],
-        capture_output=True, text=True
-    )
-    return result.stdout.strip()
 
-def get_file_diff(commit_hash, file_path):
-    """Get the detailed diff for a specific file in a commit"""
-    result = subprocess.run(
-        ["git", "show", "--format=", "--unified=3", f"{commit_hash}:{file_path}"],
-        capture_output=True, text=True
-    )
+def run_git(*args):
+    """Helper to run git commands and capture output."""
+    result = subprocess.run(("git",) + args, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Git command failed: git {' '.join(args)}\n{result.stderr}")
     return result.stdout
 
-def identify_functions(diff_text, file_path):
-    """Extract function names and contexts from diff text"""
-    functions_affected = []
-    
-    # Adjust pattern based on file extension for different languages
-    ext = os.path.splitext(file_path)[1].lower()
-    
-    # Define patterns for different languages
-    if ext in ['.py']:
-        # Python function pattern
-        pattern = r'(def\s+([a-zA-Z0-9_]+)\(.*?\):)'
-    elif ext in ['.js', '.ts']:
-        # JavaScript/TypeScript function pattern
-        pattern = r'(function\s+([a-zA-Z0-9_]+)\(.*?\)|([a-zA-Z0-9_]+)\s*=\s*function\(.*?\)|([a-zA-Z0-9_]+)\s*:\s*function\(.*?\))'
-    elif ext in ['.java', '.c', '.cpp', '.h', '.hpp']:
-        # C/C++/Java pattern
-        pattern = r'(([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*\(.*?\)\s*\{)'
-    else:
-        # Generic fallback
-        pattern = r'(([a-zA-Z0-9_]+)\s*\(.*?\))'
-    
-    # Find all matches
-    matches = re.findall(pattern, diff_text, re.DOTALL)
-    if matches:
-        for match in matches:
-            if isinstance(match, tuple):
-                func_name = match[1] if len(match) > 1 else match[0]
-                functions_affected.append(func_name)
-    
-    return list(set(functions_affected))  # Remove duplicates
 
-def get_recent_changes():
-    """Get detailed information about recent changes"""
-    # Get recent commit hashes
-    result = subprocess.run(
-        ["git", "log", "--format=%H", "-n", "10"],
-        capture_output=True, text=True
-    )
-    commit_hashes = result.stdout.strip().split('\n')
-    
+def get_commit_details(commit_hash):
+    """Get commit metadata: short hash, author, date, message."""
+    out = run_git("show", "-s", "--format=%h|%an|%ad|%s", commit_hash)
+    return tuple(out.strip().split("|", 3))
+
+
+def get_changed_files(commit_hash):
+    """Return a list of (status, path) tuples for a commit."""
+    out = run_git("show", "--name-status", "--format=", commit_hash)
+    files = []
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        status, path = line.split("\t", 1)
+        files.append((status, path))
+    return files
+
+
+def get_file_diff(commit_hash, file_path):
+    """Get full unified diff for a single file in a commit."""
+    # Use git diff-tree to avoid ambiguous args
+    return run_git("diff", f"{commit_hash}~", commit_hash, "--", file_path)
+
+
+def identify_functions(diff_text, file_path):
+    """Extract function/method names from diff by language-specific patterns."""
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext == '.py':
+        pat = r'^\+{0,1}def\s+([A-Za-z0-9_]+)\s*\('  # added or context
+    elif ext in ('.js', '.ts'):
+        pat = r'^(?:\+{0,1})(?:function\s+([A-Za-z0-9_]+)\s*\(|([A-Za-z0-9_]+)\s*=\s*\([^)]*\)\s*=>)'
+    else:
+        pat = r'^(?:\+{0,1})(?:[A-Za-z0-9_]+)\s+([A-Za-z0-9_]+)\s*\([^)]*\)'
+    funcs = set()
+    for line in diff_text.splitlines():
+        m = re.match(pat, line)
+        if m:
+            name = m.group(1) or m.group(2)
+            if name:
+                funcs.add(name)
+    return sorted(funcs)
+
+
+def parse_diff_hunks(diff_text):
+    """Extract changed hunk contexts (line ranges)."""
+    hunks = []
+    for line in diff_text.splitlines():
+        if line.startswith('@@'):
+            m = re.search(r'@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@', line)
+            if m:
+                start = int(m.group(1))
+                count = int(m.group(2) or '1')
+                hunks.append((start, start + count - 1))
+    return hunks
+
+
+def get_recent_changes(limit=10):
+    """Gather detailed info for the last `limit` commits."""
+    hashes = run_git("log", f"-n{limit}", "--format=%H").splitlines()
     changes = []
-    
-    for commit_hash in commit_hashes:
-        commit_hash = commit_hash.strip()
-        if not commit_hash:
-            continue
-            
-        # Get basic commit details
-        details = get_commit_details(commit_hash)
-        if '|' not in details:
-            continue
-            
-        hash, author, date, message = details.split('|', 3)
-        
-        # Get list of changed files
-        result = subprocess.run(
-            ["git", "show", "--name-status", "--format=", commit_hash],
-            capture_output=True, text=True
-        )
-        changed_files = []
-        
-        for line in result.stdout.strip().split('\n'):
-            if not line.strip():
-                continue
-                
-            parts = line.split('\t')
-            if len(parts) < 2:
-                continue
-                
-            status, file_path = parts[0], parts[1]
-            
-            # Get detailed diff for this file
-            diff_output = subprocess.run(
-                ["git", "show", "--format=", "--unified=3", f"{commit_hash} -- {file_path}"],
-                capture_output=True, text=True
-            )
-            diff_text = diff_output.stdout
-            
-            # Extract line numbers changed
-            line_changes = []
-            for diff_line in diff_text.split('\n'):
-                if diff_line.startswith('@@'):
-                    match = re.search(r'@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@', diff_line)
-                    if match:
-                        line_changes.append(f"Lines around {match.group(2)}")
-            
-            # Identify affected functions
-            affected_functions = identify_functions(diff_text, file_path)
-            
-            file_info = {
+    for full_hash in hashes:
+        short, author, date, msg = get_commit_details(full_hash)
+        files = []
+        for status, path in get_changed_files(full_hash):
+            diff = get_file_diff(full_hash, path)
+            hunks = parse_diff_hunks(diff)
+            funcs = identify_functions(diff, path)
+            files.append({
                 'status': status,
-                'path': file_path,
-                'line_changes': line_changes,
-                'affected_functions': affected_functions,
-                'diff': diff_text.split('\n')[:20]  # First 20 lines of diff for context
-            }
-            changed_files.append(file_info)
-        
-        change_info = {
-            'hash': hash,
+                'path': path,
+                'hunks': hunks,
+                'functions': funcs,
+                'diff': diff.strip().splitlines()
+            })
+        changes.append({
+            'hash': short,
+            'full_hash': full_hash,
             'author': author,
             'date': date,
-            'message': message,
-            'files': changed_files
-        }
-        changes.append(change_info)
-    
+            'message': msg,
+            'files': files
+        })
     return changes
 
-def generate_markdown(changes):
-    """Generate detailed markdown documentation from changes"""
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
-    
-    md = f"# Code Changes - {today}\n\n"
-    
-    for commit in changes:
-        md += f"## {commit['message']}\n"
-        md += f"**Commit:** {commit['hash']} by {commit['author']} on {commit['date']}\n\n"
-        
-        md += "### Files Changed\n"
-        for file in commit['files']:
-            status_map = {'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed'}
-            status = status_map.get(file['status'], file['status'])
-            md += f"- **{status}**: `{file['path']}`\n"
-            
-            # Add affected functions
-            if file['affected_functions']:
-                md += "  - **Affected functions/methods:**\n"
-                for func in file['affected_functions']:
-                    md += f"    - `{func}`\n"
-            
-            # Add line changes
-            if file['line_changes']:
-                md += "  - **Changed sections:**\n"
-                for line_change in file['line_changes']:
-                    md += f"    - {line_change}\n"
-            
-            # Add diff snippet
-            if 'diff' in file and file['diff']:
-                md += "  - **Change preview:**\n"
-                md += "    ```diff\n"
-                for line in file['diff'][:10]:  # First 10 lines
-                    if line.startswith('+'):
-                        md += f"    {line}\n"
-                    elif line.startswith('-'):
-                        md += f"    {line}\n"
-                    else:
-                        md += f"    {line}\n"
-                md += "    ```\n"
-        
-        md += "\n---\n\n"
-    
-    return md
 
-def main():
-    """Generate changelog and write to file"""
-    repo_dir = "/home/triniborrell/home/projects/TOTEM_for_EEG_code"
-    os.makedirs(f"{repo_dir}/docs/changes", exist_ok=True)
-    
-    changes = get_recent_changes()
-    markdown = generate_markdown(changes)
-    
+def generate_markdown(changes):
+    """Render the full changes into a Markdown document."""
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    output_path = f"{repo_dir}/docs/changes/changelog-{today}.md"
-    with open(output_path, "w") as f:
+    md = [f"# Code Changes - {today}\n"]
+    for c in changes:
+        md.append(f"## {c['message']} \n")
+        md.append(f"**Commit:** `{c['hash']}` by {c['author']} on {c['date']}\n")
+        md.append("### Files Changed\n")
+        for f in c['files']:
+            status = {'M':'Modified','A':'Added','D':'Deleted','R':'Renamed'}.get(f['status'], f['status'])
+            md.append(f"- **{status}** `{f['path']}`\n")
+
+            if f['functions']:
+                md.append("  - **Affected functions:**\n")
+                for fn in f['functions']:
+                    md.append(f"    - `{fn}`\n")
+
+            if f['hunks']:
+                md.append("  - **Changed ranges:**\n")
+                for start, end in f['hunks']:
+                    md.append(f"    - Lines {start}-{end}\n")
+
+            md.append("  - **Diff:**\n")
+            md.append("  ```diff\n")
+            for line in f['diff']:
+                md.append(f"{line}" if line.startswith(('+','-','@@')) else f" {line}")
+            md.append("```\n")
+            md.append("\n")
+        md.append("---\n")
+        md.append("\n")
+    return "\n".join(md)
+
+
+def main(limit=10):
+    repo_dir = os.path.abspath(os.getcwd())
+    docs_dir = os.path.join(repo_dir, 'docs', 'changes')
+    os.makedirs(docs_dir, exist_ok=True)
+
+    changes = get_recent_changes(limit)
+    markdown = generate_markdown(changes)
+
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    output = os.path.join(docs_dir, f"changelog-{today}.md")
+    with open(output, 'w') as f:
         f.write(markdown)
-    
-    print(f"Generated detailed changelog at {output_path}")
-    
-    # Also update the latest.md file
-    latest_path = f"{repo_dir}/docs/changes/latest.md"
-    with open(latest_path, "w") as f:
+
+    latest = os.path.join(docs_dir, 'latest.md')
+    with open(latest, 'w') as f:
         f.write(markdown)
-    
-    # Add the generated files to git if this is not run from a hook
+
+    print(f"Changelog written to {output} and {latest}")
+
     if not os.environ.get('GIT_HOOK_RUNNING'):
         try:
-            subprocess.run(["git", "add", output_path, latest_path], check=False)
-            print("Added changelog files to git staging")
-        except Exception as e:
-            print(f"Note: Could not add files to git: {e}")
+            run_git('add', output, latest)
+            print("Staged changelog files for commit.")
+        except RuntimeError as e:
+            print(f"Warning: {e}")
 
-if __name__ == "__main__":
-    main()
+
+if __name__ == '__main__':
+    try:
+        n = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+        main(n)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
