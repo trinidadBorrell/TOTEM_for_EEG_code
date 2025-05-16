@@ -132,7 +132,7 @@ def generate_markdown(changes):
 
 
 def main(limit=10):
-    repo_dir = os.path.abspath(os.getcwd())
+    repo_dir = "/home/triniborrell/home/projects/TOTEM_for_EEG_code"
     docs_dir = os.path.join(repo_dir, 'docs', 'changes')
     os.makedirs(docs_dir, exist_ok=True)
 
