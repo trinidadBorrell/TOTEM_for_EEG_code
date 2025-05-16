@@ -1,7 +1,7 @@
 random_seed: 2021
 data: "eeg" ## e.g. "eeg"
-root_paths: ??? ## e.g. ["./data/ETT/"]
-data_paths: ??? ## e.g. ["ETTh1.csv"]
+root_paths: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/data/" ## e.g. ["./data/ETT/"]
+data_paths: "a_dataset.csv" ## e.g. ["ETTh1.csv"]
 seq_len: 96 ## input sequence length
 label_len: 0 ## start token length
 pred_len: 96 ## prediction sequence length
@@ -10,7 +10,7 @@ use_gpu: True
 gpu: 0
 use_multi_gpu: False
 devices: '0,1,2,3'
-save_path: ???
+save_path: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/save/"
 num_workers: 10 # data loader num workers
 batch_size: 128 # batch size of train input data
 features: "M" # forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate

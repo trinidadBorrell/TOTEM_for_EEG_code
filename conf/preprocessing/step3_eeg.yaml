@@ -1,8 +1,8 @@
 random_seed: 2021
 data: eeg
-train_root_paths: ???
+train_root_paths: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/data/test/"
 train_data_paths: ???
-test_root_paths: ???
+test_root_paths: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/data/test/"
 test_data_paths: ???
 features: "M" # options: [clean or other] if "clean" will clean the data using the specified bad_channels.csv in corresponding data_path.
 target: "half" # target feature in S or MS task (overriden as step_size in EEG dataset)
@@ -16,6 +16,6 @@ num_workers: 10
 batch_size: 128
 use_gpu: True 
 gpu: 0
-save_path: ???
+save_path: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/save/"
 trained_vqvae_model_path: ???
 compression_factor: 4

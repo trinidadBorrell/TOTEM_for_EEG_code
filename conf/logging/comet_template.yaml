@@ -1,6 +1,6 @@
 comet:
-  api_key: ???
-  project_name: ???
-  workspace: ???
-  comet_tag: ???
-  comet_name: ???
+  api_key: "CaCR03FkswI9b7gW1XuubXpbG"
+  project_name: "totem_eeg"
+  workspace: "trinidadborrell"
+  comet_tag: "first_run"
+  comet_name: "totem_eeg"

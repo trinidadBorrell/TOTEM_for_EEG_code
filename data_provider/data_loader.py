@@ -594,8 +594,6 @@ class Dataset_EEG(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features=None, data_path='ETTh1.csv',
                  target='OT', scale=True, timeenc=0, freq='h'):
-        # size [seq_len, label_len, pred_len]
-        # info
         if size == None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
@@ -621,7 +619,9 @@ class Dataset_EEG(Dataset):
         self.scale = scale
         self.timeenc = timeenc
         self.freq = freq
-        self.event_dict = {'Up': 1, 'Down': 2, 'Left': 3, 'Right': 4, 'Rest': 6}
+        # self.event_dict = {'Up': 1, 'Down': 2, 'Left': 3, 'Right': 4, 'Rest': 6}
+        # Edit this line in data_loader.py
+        self.event_dict = {'Rest': 0, 'Event1': 1, 'Event2': 2}
 
         self.root_path = root_path
         self.data_path = data_path
@@ -682,6 +682,7 @@ class Dataset_EEG(Dataset):
     def make_contiguous_x_data(self, df_raw, df_split, split):         
         data_x = []
         for trial_start_ind, r in df_split[df_split['split'] == split].iterrows():
+            print(df_raw.loc[trial_start_ind:][df_raw.loc[trial_start_ind:, 'STI'] == self.event_dict['Rest']].iloc[0].name)
             trial_end_ind = df_raw.loc[trial_start_ind:][df_raw.loc[trial_start_ind:, 'STI'] == self.event_dict['Rest']].iloc[0].name
             data_x.append(df_raw.loc[trial_start_ind:trial_end_ind, self.eeg_columns].values)
         return np.concatenate(data_x)

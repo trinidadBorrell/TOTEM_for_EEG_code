@@ -1,6 +1,6 @@
-repo_dir="/path/to/TOTEM_for_EEG_code"
+repo_dir="/home/triniborrell/home/projects/TOTEM_for_EEG_code"
 
-dataset_name="example"
+dataset_name="a_dataset"
 
 python -m steps.STEP3_save_classification_data \
     +preprocessing=step3_eeg \

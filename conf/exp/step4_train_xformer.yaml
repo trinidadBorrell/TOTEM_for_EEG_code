@@ -3,13 +3,13 @@ classifier_config:
   seed: 47
   model_type: "xformer"
   data_type: "eeg"
-  data_path: ???
+  data_path: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/data/"
   codebook_size: 256
   compression: 4
   Tin: 512
   checkpoint: true 
-  checkpoint_path: ??? 
-  exp_name: ??? 
+  checkpoint_path: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/pipeline/step4_train_xformer/" 
+  exp_name: "first_run" 
   optimizer: "adam" 
   scheduler: "step"
   baselr: 0.0001

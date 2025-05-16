@@ -1,4 +1,4 @@
-save_dir: ???
+save_dir: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/save/"
 gpu_id: 0
 data_init_cpu_or_gpu: "cpu"
 vqvae_config: 
@@ -17,5 +17,6 @@ vqvae_config:
   num_embeddings: 256
   commitment_cost: 0.25
   compression_factor: 4
-  dataset: ??? 
-  dataset_base_path: ??? 
+  dataset: "a_dataset.csv" 
+  dataset_base_path: "/home/triniborrell/home/projects/TOTEM_for_EEG_code/data/"
+  
