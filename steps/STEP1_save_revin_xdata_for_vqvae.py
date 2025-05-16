@@ -46,6 +46,8 @@ class ExtractData:
     def __init__(self, args):
         self.args = args
         self.device = 'cuda:' + str(self.args.gpu)
+        print('-----------------Using device:', self.device)
+        self.device = torch.device(self.device if torch.cuda.is_available() else 'cpu')
         self.revin_layer_x = RevIN(num_features=self.args.enc_in, affine=False, subtract_last=False)
         self.revin_layer_y = RevIN(num_features=self.args.enc_in, affine=False, subtract_last=False)
 

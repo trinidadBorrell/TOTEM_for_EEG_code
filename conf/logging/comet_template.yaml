@@ -2,5 +2,5 @@ comet:
   api_key: "CaCR03FkswI9b7gW1XuubXpbG"
   project_name: "totem_eeg"
   workspace: "trinidadborrell"
-  comet_tag: "first_run"
+  comet_tag: "second_run"
   comet_name: "totem_eeg"

@@ -30,13 +30,31 @@ def get_changed_files(commit_hash):
         files.append((status, path))
     return files
 
+"""
 
 def get_file_diff(commit_hash, file_path):
-    """Get full unified diff for a single file in a commit."""
+    Get full unified diff for a single file in a commit.
     # Use git diff-tree to avoid ambiguous args
     return run_git("diff", f"{commit_hash}~", commit_hash, "--", file_path)
 
+"""
 
+def get_file_diff(commit_hash, file_path):
+    """Get full unified diff for a single file in a commit."""
+    try:
+        # Try to get diff between commit and its parent
+        return run_git("diff", f"{commit_hash}~", commit_hash, "--", file_path)
+    except RuntimeError:
+        # For initial commit or other special cases, get the full file content
+        try:
+            # Get the file content at this commit (for added files)
+            content = run_git("show", f"{commit_hash}:{file_path}")
+            # Format it like a diff with all lines added
+            return "\n".join([f"+{line}" for line in content.splitlines()])
+        except RuntimeError:
+            # If that fails too, just return empty diff
+            return ""
+        
 def identify_functions(diff_text, file_path):
     """Extract function/method names from diff by language-specific patterns."""
     ext = os.path.splitext(file_path)[1].lower()

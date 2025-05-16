@@ -8,6 +8,7 @@ import torch.nn as nn
 
 from data_provider.data_factory_vqvae_no_shuffle import data_provider_flexPath
 from lib.models.revin import RevIN
+from lib.models.vqvae import vqvae
 
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -102,10 +103,15 @@ def main(cfg: DictConfig) -> None:
 class ExtractData:
     def __init__(self, args):
         self.args = args
-        self.device = 'cuda:' + str(self.args.gpu)
+        if not args.use_gpu or not torch.cuda.is_available():
+            self.device = 'cpu'
+        else:
+            self.device = 'cuda:' + str(self.args.gpu)
+    
+        print(f"Using device: {self.device}")
         self.revin_layer_x = RevIN(num_features=self.args.enc_in, affine=False, subtract_last=False)
-        self.revin_layer_y = RevIN(num_features=self.args.enc_in, affine=False, subtract_last=False)
-
+        self.revin_layer_y = RevIN(num_features=self.args.enc_in, affine=False, subtract_last=False)       
+        
     # def _get_data(self, flag):
     #     data_set, data_loader = data_provider(self.args, flag)
     #     return data_set, data_loader
@@ -162,7 +168,14 @@ class ExtractData:
         return data_dict
 
     def extract_data(self, root_path_name, data_path_name, save_data=True):
+        """
         vqvae_model = torch.load(self.args.trained_vqvae_model_path)
+        vqvae_model.to(self.device)
+        vqvae_model.eval()
+        """
+    #    torch.serialization.add_safe_globals([vqvae])
+    
+        vqvae_model = torch.load(self.args.trained_vqvae_model_path, weights_only=False)
         vqvae_model.to(self.device)
         vqvae_model.eval()
 
